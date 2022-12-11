@@ -1,9 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import {
   getAuth,
-  signInWithRedirect,
   signInWithPopup,
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  //signInWithRedirect,
 } from 'firebase/auth';
 
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
@@ -21,21 +22,30 @@ const firebaseConfig = {
 // Initialize Firebase
 const firebaseApp = initializeApp(firebaseConfig);
 
-// Set up authentication
-const provider = new GoogleAuthProvider();
+// Set up authentication provider
+const googleProvider = new GoogleAuthProvider();
 
 // Call setCustomParameters
-provider.setCustomParameters({
+googleProvider.setCustomParameters({
   prompt: 'select_account',
 });
 
-export const auth = getAuth(); // create authentication
-export const signInWithGooglePopup = () => signInWithPopup(auth, provider);
+// create authentication
+export const auth = getAuth();
+
+export const signInWithGooglePopup = () =>
+  signInWithPopup(auth, googleProvider);
+
+// sign in with google redirect
+// export const signInWithGoogleRedirect = () =>
+//   signInWithRedirect(auth, googleProvider);
 
 // Create database
 export const db = getFirestore();
 
-export const createUserDocFromAuth = async (userAuth) => {
+export const createUserDocFromAuth = async (userAuth, additionalInfo = {}) => {
+  if (!userAuth) return;
+
   const userDocRef = doc(db, 'users', userAuth.uid);
 
   const userSnapshot = await getDoc(userDocRef);
@@ -50,6 +60,7 @@ export const createUserDocFromAuth = async (userAuth) => {
         displayName,
         email,
         createdAt,
+        ...additionalInfo,
       });
     } catch (error) {
       console.log('error creating the user', error.message);
@@ -57,4 +68,10 @@ export const createUserDocFromAuth = async (userAuth) => {
   }
   // if user data exists  return userDocRef
   return userDocRef;
+};
+
+export const createAuthUserWithEmailAndPassword = async (email, password) => {
+  if (!email || !password) return;
+
+  return await createUserWithEmailAndPassword(auth, email, password);
 };
